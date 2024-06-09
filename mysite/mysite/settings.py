@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+	'polls.apps.PollsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -80,6 +81,17 @@ DATABASES = {
     }
 }
 
+# raise NotSupportedError( django.db.utils.NotSupportedError: MySQL 8.0.11 or later is required (found 5.7.44).
+# DATABASES={
+#     'default':{
+#         'ENGINE':'django.db.backends.mysql',#数据库的类型
+#         'NAME':'professors',#所使用的数据库的名字
+#         'USER':'admin',#数据库服务器的用户
+#         'PASSWORD':'123456',#密码
+#         'HOST':'127.0.0.1',#主机
+#         'PORT':'3306',#端口
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
