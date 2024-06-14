@@ -1,58 +1,77 @@
-import pymysql
-import smtplib
+import mysql.connector
+from smtplib import SMTP_SSL
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from email.header import Header
 
 # 数据库连接配置
 db_config = {
-    'host': 'localhost',       # 数据库服务器地址
-    'user': 'admin',   # 数据库用户名
-    'password': '123456', # 数据库密码
-    'db': 'professors',       # 数据库名
-    'charset': 'utf8mb4',      # 字符集
-    'cursorclass': pymysql.cursors.DictCursor  # 使用字典形式的游标
+    'host': 'localhost',  # 数据库服务器地址
+    'user': 'admin',       # 数据库用户名
+    'password': '123456',   # 数据库密码
+    'database': 'outsourcing'    # 数据库名
 }
 
 # 邮件发送配置
-mail_config = {
-    'smtp_server': 'smtp.example.com',  # SMTP服务器地址
-    'port': 587,                         # SMTP端口
-    'username': 'your_email@example.com', # 发件人邮箱
-    'password': 'your_email_password',   # 发件人邮箱密码
-    'from_name': 'Your Name',            # 发件人名称
-    'from_addr': 'your_email@example.com' # 发件人邮箱地址
-}
+sender_qq = 'm20genomics@qq.com'
+pwd = 'lkiaqiyiafqtdedg'
+host_server = 'smtp.qq.com'
+mail_title = 'Python自动发送的邮件'
+mail_content = "您好，我们是M20Genomics"
 
 # 连接数据库
-connection = pymysql.connect(**db_config)
+db = mysql.connector.connect(**db_config)
+cursor = db.cursor()
 
 try:
-    with connection.cursor() as cursor:
-        # 执行SQL查询
-        sql = "SELECT email FROM people"
-        cursor.execute(sql)
-        results = cursor.fetchall()
+    # 执行SQL查询
+    cursor.execute("SELECT email FROM outsourcing.people")
+    # 获取所有邮件地址
+    emails = cursor.fetchall()
 
-        # 遍历查询结果
-        for email in results:
-            email_address = email['email']
+    # 邮件发送逻辑
+    for email in emails:
+        print(email[0])
+        # receiver = email[0]  # 假设email字段是第一个字段
+        #
+        # # 初始化邮件
+        # msg = MIMEMultipart()
+        # msg["Subject"] = Header(mail_title, 'utf-8')
+        # msg["From"] = sender_qq
+        # msg['To'] = Header(receiver, 'utf-8')  # 确保邮件地址是utf-8编码
+        # msg.attach(MIMEText(mail_content, 'plain', 'utf-8'))
+        #
+        # # 发送邮件
+        # smtp = SMTP_SSL(host_server)
+        # smtp.login(sender_qq, pwd)
+        # smtp.sendmail(sender_qq, receiver, msg.as_string())
+        # smtp.quit()
+        #
+        # print(f"邮件已发送至: {receiver}")
+        if email[0] == "dzx0217@qq.com":
+            receiver = email[0]  # 假设email字段是第一个字段
 
-            # 创建邮件内容
-            msg = MIMEText('Hello, this is an automated email.', 'plain', 'utf-8')
-            msg['From'] = Header(mail_config['from_name'], 'utf-8')
-            msg['To'] = email_address
-            msg['Subject'] = Header('Automated Email Subject', 'utf-8')
+            # 初始化邮件
+            msg = MIMEMultipart()
+            msg["Subject"] = Header(mail_title, 'utf-8')
+            msg["From"] = sender_qq
+            msg['To'] = Header(receiver, 'utf-8')  # 确保邮件地址是utf-8编码
+            msg.attach(MIMEText(mail_content, 'plain', 'utf-8'))
 
             # 发送邮件
-            server = smtplib.SMTP(mail_config['smtp_server'], mail_config['port'])
-            server.starttls()
-            server.login(mail_config['username'], mail_config['password'])
-            server.sendmail(mail_config['from_addr'], [email_address], msg.as_string())
-            server.quit()
+            smtp = SMTP_SSL(host_server)
+            smtp.login(sender_qq, pwd)
+            smtp.sendmail(sender_qq, receiver, msg.as_string())
+            smtp.quit()
 
-            print(f"Email sent to {email_address}")
+            print(f"邮件已发送至: {receiver}")
 
+except mysql.connector.Error as err:
+    print(f"数据库错误: {err}")
 finally:
-    connection.close()
+    # 关闭数据库连接
+    if db.is_connected():
+        cursor.close()
+        db.close()
 
-print("Email sending process completed.")
+print("邮件发送完毕。")
