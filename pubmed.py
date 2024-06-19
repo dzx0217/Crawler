@@ -1,88 +1,40 @@
-import pandas as pd
-from metapub import PubMedFetcher
+import requests
+from bs4 import BeautifulSoup
 
-# initialise the keyword to be searched and number of articles to be retrieved
+def fetch_pubmed_data(keyword):
+    base_url = "https://pubmed.ncbi.nlm.nih.gov/"
+    params = {
+        'term': keyword,
+        'filter': 'datesearch.y_5'
+    }
 
-keyword = "sepsis"
-num_of_articles = 3
+    response = requests.get(base_url, params=params)
+    if response.status_code != 200:
+        raise Exception("Failed to load page {}".format(base_url))
 
-fetch = PubMedFetcher()
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-# get the  PMID for first 3 articles with keyword sepsis
-pmids = fetch.pmids_for_query(keyword, retmax=num_of_articles)
+    articles = []
+    for docsum in soup.find_all('div', class_='docsum-content'):
+        title_tag = docsum.find('a', class_='docsum-title')
+        journal_citation_tag = docsum.find('span', class_='docsum-journal-citation full-journal-citation')
+        pmid_tag = docsum.find('span', class_='docsum-pmid')
 
-# get  articles
-articles = {}
-for pmid in pmids:
-    articles[pmid] = fetch.article_by_pmid(pmid)
+        if title_tag and journal_citation_tag and pmid_tag:
+            article = {
+                'title': title_tag.get_text(strip=True),
+                'journal_citation': journal_citation_tag.get_text(strip=True),
+                'pmid': pmid_tag.get_text(strip=True)
+            }
+            articles.append(article)
 
-# get title for each article:
-titles = {}
-for pmid in pmids:
-    titles[pmid] = fetch.article_by_pmid(pmid).title
-Title = pd.DataFrame(list(titles.items()), columns=['pmid', 'Title'])
-Title
+    return articles
 
-# get abstract for each article:
-abstracts = {}
-for pmid in pmids:
-    abstracts[pmid] = fetch.article_by_pmid(pmid).abstract
-Abstract = pd.DataFrame(list(abstracts.items()), columns=['pmid', 'Abstract'])
-Abstract
+# 使用示例
+keyword = "cancer"
+articles = fetch_pubmed_data(keyword)
 
-# get author for each article:
-authors = {}
-for pmid in pmids:
-    authors[pmid] = fetch.article_by_pmid(pmid).authors
-Author = pd.DataFrame(list(authors.items()), columns=['pmid', 'Author'])
-Author
-
-# get year for each article:
-years = {}
-for pmid in pmids:
-    years[pmid] = fetch.article_by_pmid(pmid).year
-Year = pd.DataFrame(list(years.items()), columns=['pmid', 'Year'])
-Year
-
-# get volume for each article:
-volumes = {}
-for pmid in pmids:
-    volumes[pmid] = fetch.article_by_pmid(pmid).volume
-Volume = pd.DataFrame(list(volumes.items()), columns=['pmid', 'Volume'])
-Volume
-
-# get issue for each article:
-issues = {}
-for pmid in pmids:
-    issues[pmid] = fetch.article_by_pmid(pmid).issue
-Issue = pd.DataFrame(list(issues.items()), columns=['pmid', 'Issue'])
-Issue
-
-# get journal for each article:
-journals = {}
-for pmid in pmids:
-    journals[pmid] = fetch.article_by_pmid(pmid).journal
-Journal = pd.DataFrame(list(journals.items()), columns=['pmid', 'Journal'])
-Journal
-
-# get citation for each article:
-citations = {}
-for pmid in pmids:
-    citations[pmid] = fetch.article_by_pmid(pmid).citation
-Citation = pd.DataFrame(list(citations.items()), columns=['pmid', 'Citation'])
-Citation
-
-links = {}
-for pmid in pmids:
-    links[pmid] = "https://pubmed.ncbi.nlm.nih.gov/" + pmid + "/"
-Link = pd.DataFrame(list(links.items()), columns=['pmid', 'Link'])
-Link
-
-data_frames = [Title, Abstract, Author, Year, Volume, Issue, Journal, Citation, Link]
-from functools import reduce
-
-df_merged = reduce(lambda left, right: pd.merge(left, right, on=['pmid'],
-                                                how='outer'), data_frames)
-df_merged
-
-df_merged.to_csv('pubmed_articles.csv')
+for article in articles:
+    print(f"Title: {article['title']}")
+    print(f"Journal Citation: {article['journal_citation']}")
+    print(f"PMID: {article['pmid']}\n")
