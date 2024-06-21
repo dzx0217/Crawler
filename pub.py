@@ -1,3 +1,5 @@
+import time
+
 import pymysql
 import requests
 from bs4 import BeautifulSoup
@@ -8,6 +10,7 @@ def fetch_pubmed_data(keyword):
         'term': keyword,
         'filter': 'datesearch.y_5'
     }
+    time.sleep(5)
     search_response = requests.get(base_url, params=search_params)
     if search_response.status_code != 200:
         raise Exception("Failed to load page {}".format(base_url))
@@ -35,6 +38,7 @@ def fetch_pubmed_data(keyword):
 
 def fetch_abstract(pmid):
     article_url = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
+    time.sleep(5)
     article_response = requests.get(article_url)
     if article_response.status_code != 200:
         raise Exception("Failed to load page {}".format(article_url))
