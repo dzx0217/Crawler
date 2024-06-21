@@ -78,11 +78,17 @@ def insert_articles_data(articles_data):
     try:
         with connection.cursor() as cursor:
             for article in articles_data:
-                # 注意这里我们使用文章字典的键来获取值
-                sql = """INSERT INTO articles ( personid,  name, school, title, journal_citation, pmid, abstract)
-                         VALUES (%s, %s, %s, %s, %s, %s)"""
-                cursor.execute(sql, (article['personid'], article['name'], article['school'],
-                                     article['title'], article['journal_citation'], article['pmid'], article['abstract']))
+                sql = """INSERT INTO articles (personid, name, school, title, journal_citation, pmid, abstract)
+                         VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+                cursor.execute(sql, (
+                    article['personid'],
+                    article['name'],
+                    article['school'],
+                    article['title'],
+                    article['journal_citation'],
+                    article['pmid'],
+                    article.get('abstract', 'No abstract available')  # 使用get方法提供默认值
+                ))
                 connection.commit()
     finally:
         connection.close()
@@ -97,12 +103,14 @@ def main():
         print(keyword)
         articles = fetch_pubmed_data(keyword)
         print(articles)
+        # 在main函数中
         for article in articles:
             article['personid'] = person['id']
             article['name'] = person['name']
             article['school'] = person['school']
             print(article['personid'])
-            # insert_articles_data(article)
+            # 将单个文章作为一个列表传递给insert_articles_data函数
+            insert_articles_data([article])
         all_articles.extend(articles)
 
     # insert_articles_data(all_articles)
